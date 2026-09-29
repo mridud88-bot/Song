@@ -1,0 +1,20 @@
+services:
+  - type: worker
+    name: telegram-music-voice-bot
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: BOT_TOKEN
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: API_ID
+        sync: false
+      - key: API_HASH
+        sync: false
+      - key: USER_SESSION_STRING
+        sync: false
+      - key: ALLOWED_GROUP_IDS
+        sync: false
+      - key: VOICE_WORKER
+        value: voice/voice_worker.py
