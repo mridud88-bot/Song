@@ -43,10 +43,9 @@ def cleanup(chat_id):
             pass
 
 
-async def play(chat_id, title, url):
-    tmp = tempfile.mktemp(suffix=".m4a")
+def build_cmd(tmp, target, youtube):
     cmd = ["yt-dlp", "-f", "bestaudio/best", "-o", tmp, "--no-playlist"]
-    if "youtube.com" in url or "youtu.be" in url:
+    if youtube:
         cmd += ["--extractor-args", "youtube:player_client=tv,web_safari"]
         secret = "/etc/secrets/youtube_cookies.txt"
         jar = "/tmp/youtube_cookies.txt"
@@ -59,10 +58,38 @@ async def play(chat_id, title, url):
                 f.write(text)
         if os.path.exists(jar):
             cmd += ["--cookies", jar]
-    cmd.append(url)
+    cmd.append(target)
+    return cmd
 
+
+def download(title, url):
+    """Try the given URL; if YouTube blocks it, fall back to SoundCloud."""
+    is_yt = "youtube.com" in url or "youtu.be" in url
+    tmp = tempfile.mktemp(suffix=".m4a")
+    try:
+        subprocess.run(build_cmd(tmp, url, is_yt), check=True, capture_output=True, text=True)
+        return tmp
+    except subprocess.CalledProcessError as e:
+        err = (e.stderr or "")[-500:]
+        log(f"worker: download failed: {err}")
+        if not is_yt:
+            raise
+    log(f"worker: YouTube blocked, trying SoundCloud for: {title}")
+    tmp = tempfile.mktemp(suffix=".m4a")
+    try:
+        subprocess.run(
+            build_cmd(tmp, f"scsearch1:{title}", False),
+            check=True, capture_output=True, text=True,
+        )
+    except subprocess.CalledProcessError as e:
+        log(f"worker: SoundCloud fallback failed: {(e.stderr or '')[-500:]}")
+        raise RuntimeError("Could not download this song from YouTube or SoundCloud")
+    return tmp
+
+
+async def play(chat_id, title, url):
     log(f"worker: downloading {title}")
-    await asyncio.to_thread(subprocess.run, cmd, check=True)
+    tmp = await asyncio.to_thread(download, title, url)
 
     old = current_files.get(chat_id)
     await calls.play(chat_id, MediaStream(tmp))
