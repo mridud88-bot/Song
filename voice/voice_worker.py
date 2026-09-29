@@ -1,4 +1,11 @@
 import asyncio
+
+# Create ONE event loop before pyrogram/pytgcalls are imported, and reuse it.
+# Otherwise they bind to a different loop than asyncio.run() creates
+# ("attached to a different loop" error).
+LOOP = asyncio.new_event_loop()
+asyncio.set_event_loop(LOOP)
+
 import json
 import os
 import subprocess
@@ -161,9 +168,10 @@ async def main():
 
 
 try:
-    asyncio.run(main())
+    LOOP.run_until_complete(main())
 except BaseException:
     import traceback
     traceback.print_exc()
     sys.stderr.flush()
     sys.exit(1)
+    
