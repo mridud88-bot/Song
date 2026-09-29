@@ -27,12 +27,13 @@ export function resolveYouTube(input: string): YouTubeResult {
       : `ytsearch1:${value}`;
 
   const data = runYtDlp([
-    "--dump-single-json",
-    "--no-playlist",
-    "--skip-download",
-    target,
-  ]);
-
+  "--dump-single-json",
+  "--no-playlist",
+  "--skip-download",
+  "--extractor-args",
+  "youtube:player_client=tv,web_safari",
+  target,
+]);
   if (!data?.url) {
     throw new Error("Could not find a playable YouTube result.");
   }
