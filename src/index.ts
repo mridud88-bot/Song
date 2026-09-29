@@ -62,3 +62,14 @@ async function main(){
   await bot.start({onStart:i=>console.log(`Bot @${i.username} started`)});
 }
 main().catch(e=>{console.error(e);process.exit(1)});
+
+import { createServer } from "node:http";
+
+const port = Number(process.env.PORT || 10000);
+
+createServer((_req, res) => {
+  res.writeHead(200, { "Content-Type": "text/plain" });
+  res.end("Telegram music bot is running");
+}).listen(port, "0.0.0.0", () => {
+  console.log(`Health server listening on port ${port}`);
+});
