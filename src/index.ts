@@ -1,7 +1,7 @@
 import { Bot } from "grammy";
 import { config } from "./config";
 import { initDb, history } from "./db";
-import { resolve } from "./youtube";
+import { resolveYouTube } from "./youtube";
 import { VoiceEngine } from "./voice";
 
 const bot=new Bot(config.botToken);
@@ -24,7 +24,7 @@ bot.command("play",async ctx=>{
   const q=ctx.match.trim();
   if(!q) return ctx.reply("Usage: /play <song or YouTube URL>");
   try{
-    const t=await resolve(q);
+    const t=await resolveYouTube(q);
     voice.play(ctx.chat!.id,t.title,t.url);
     await history(ctx.chat!.id,ctx.from!.id,t.title,t.url);
     await ctx.reply(`▶️ Joining/playing: ${t.title}`);
