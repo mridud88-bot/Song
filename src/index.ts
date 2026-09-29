@@ -25,7 +25,7 @@ bot.command("play",async ctx=>{
   if(!q) return ctx.reply("Usage: /play <song or YouTube URL>");
   try{
     const t=await resolveYouTube(q);
-    voice.play(ctx.chat!.id,t.title,t.url);
+    if(!voice.play(ctx.chat!.id,t.title,t.url)) throw new Error("Voice engine is starting, try again in a few seconds.");
     await history(ctx.chat!.id,ctx.from!.id,t.title,t.url);
     await ctx.reply(`▶️ Joining/playing: ${t.title}`);
   }catch(e:any){
