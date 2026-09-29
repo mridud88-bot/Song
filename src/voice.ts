@@ -7,7 +7,7 @@ export class VoiceEngine {
 
   start() {
     if (this.alive) return;
-    const w = spawn("python3", [config.voiceWorker], {
+    const w = spawn("python3", ["-u", config.voiceWorker], {
       stdio: ["pipe", "pipe", "pipe"],
     });
     this.worker = w;
