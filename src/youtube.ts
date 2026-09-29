@@ -15,8 +15,26 @@ function runYtDlp(args: string[]): any {
 
     return JSON.parse(output);
   } catch (error: any) {
-    const stderr = error?.stderr?.toString?.() || error?.message || "yt-dlp failed";
-    throw new Error(`yt-dlp failed: ${stderr}`);
+    const stderr =
+      error?.stderr?.toString?.() ||
+      error?.message ||
+      "Unknown yt-dlp error";
+
+    // Keep the detailed error in Render logs.
+    console.error("[yt-dlp]", stderr);
+
+    // Don't expose yt-dlp's long URLs/warnings to Telegram users.
+    if (/sign in to confirm|not a bot|captcha/i.test(stderr)) {
+      throw new Error(
+        "YouTube is temporarily blocking playback. Please try again later."
+      );
+    }
+
+    if (/could not find|no video|unable to extract/i.test(stderr)) {
+      throw new Error("I couldn't find a playable YouTube result.");
+    }
+
+    throw new Error("YouTube playback failed. Please try another song.");
   }
 }
 
@@ -37,12 +55,10 @@ export function resolveYouTube(input: string): YouTubeResult {
     "--no-playlist",
     "--skip-download",
 
-    // YouTube extraction
     "--extractor-args",
     "youtube:player_client=tv,web_safari",
   ];
 
-  // Use Render's secret cookie file when it exists.
   const cookieFile = "/etc/secrets/youtube_cookies.txt";
 
   if (existsSync(cookieFile)) {
@@ -53,7 +69,6 @@ export function resolveYouTube(input: string): YouTubeResult {
 
   const data = runYtDlp(args);
 
-  // yt-dlp can return a search result inside "entries".
   const result =
     Array.isArray(data?.entries) && data.entries.length > 0
       ? data.entries[0]
@@ -65,7 +80,7 @@ export function resolveYouTube(input: string): YouTubeResult {
     result?.url;
 
   if (!url) {
-    throw new Error("Could not find a playable YouTube result.");
+    throw new Error("I couldn't find a playable YouTube result.");
   }
 
   return {
